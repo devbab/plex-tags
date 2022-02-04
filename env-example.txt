@@ -1,0 +1,8 @@
+#
+# HERE API KEY for batch reverse geocoding
+API_KEY=<put your key here>
+#
+# where to store Temp files
+TMP=/temp
+#
+#

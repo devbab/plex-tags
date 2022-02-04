@@ -1,0 +1,12 @@
+node_modules/
+.vscode/*
+database.pptx
+dbbrowser*
+package-lock.json
+backup/
+js/test.js
+logs/
+test/
+doc/~$database.pptx
+plex-tags-1.0.1.tgz
+.env

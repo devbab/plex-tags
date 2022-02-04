@@ -1,0 +1,66 @@
+{
+    "name": "plex-tags",
+    "version": "1.0.1",
+    "description": "Add Faces and Places tags to photos in Plex Database",
+    "main": "plex-ttp.js",
+    "scripts": {
+        "eslint": "eslint --ignore-path  .eslintignore ./*.js js/*.js",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/devbab/plex-tags.git"
+    },
+    "keywords": [
+        "Plex",
+        "TagThatPhoto",
+        "EXIF",
+        "Faces",
+        "GPS",
+        "Places"
+    ],
+    "author": "devbab",
+    "license": "ISC",
+    "dependencies": {
+        "@devbab/logger": "^1.0.1",
+        "better-sqlite3": "^7.5.0",
+        "colors": "^1.4.0",
+        "csvtojson": "^2.0.10",
+        "dayjs": "^1.10.7",
+        "debug": "^4.3.3",
+        "dotenv": "^14.3.2",
+        "etl": "^0.6.12",
+        "ev": "^0.0.7",
+        "exiftool-vendored": "^15.10.1",
+        "minimist": "^1.2.5",
+        "os": "^0.1.2",
+        "sharp": "^0.29.3",
+        "sqlite3": "^4.2.0",
+        "superagent": "^5.3.1",
+        "uniqid": "^5.4.0",
+        "unzipper": "^0.10.11",
+        "yesno": "^0.3.1"
+    },
+    "devDependencies": {
+        "eslint": "^8.8.0"
+    },
+    "engines": {
+        "node": ">=16.0"
+    },
+    "files": [
+        "package.json",
+        "doc",
+        ".eslintrc",
+        "README.md",
+        "js/exif.js",
+        "js/iso3166.js",
+        "js/plex-face.js",
+        "js/plex-place.js",
+        "js/plex.js",
+        "plex-geo.js",
+        "plex-scan.js",
+        "plex-thumb.js",
+        "plex-tools.js",
+        "plex-scan.js"
+    ]
+}
