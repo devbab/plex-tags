@@ -12,7 +12,13 @@ This package allows you to scan your `Plex` photo database, so as to extract the
 
 * * *
 ## Warning - Achtung - Alarm - Attention 
-**The various scripts interact directly with Plex database.** 
+**1/ Windows only** 
+
+This package has been tested on Win10 only. Macos, Linux remains to be checked !
+
+&nbsp;
+
+**2/ The various scripts interact directly with Plex database.** 
 
 Make sure you have done a [backup of your database](https://support.plex.tv/articles/201539237-backing-up-plex-media-server-data/)  before using this script.
 
