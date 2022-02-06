@@ -2,10 +2,9 @@
     "name": "plex-tags",
     "version": "1.0.1",
     "description": "Add Faces and Places tags to photos in Plex Database",
-    "main": "plex-ttp.js",
+    "main": "plex.js",
     "scripts": {
-        "eslint": "eslint --ignore-path  .eslintignore ./*.js js/*.js",
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "eslint": "eslint --ignore-path  .eslintignore ./*.js js/*.js"
     },
     "repository": {
         "type": "git",
@@ -25,6 +24,7 @@
         "@devbab/logger": "^1.0.1",
         "better-sqlite3": "^7.5.0",
         "colors": "^1.4.0",
+        "cors": "^2.8.5",
         "csvtojson": "^2.0.10",
         "dayjs": "^1.10.7",
         "debug": "^4.3.3",
@@ -32,6 +32,7 @@
         "etl": "^0.6.12",
         "ev": "^0.0.7",
         "exiftool-vendored": "^15.10.1",
+        "express": "^4.17.2",
         "minimist": "^1.2.5",
         "os": "^0.1.2",
         "sharp": "^0.29.3",
