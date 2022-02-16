@@ -136,3 +136,15 @@ async function delplaces() {
 
 }
 if (argv.delplaces) delplaces()
+
+// in release 1.0.4 we had put PLACE ad FACE into extra_data, Plex seems to complain..
+if (argv.fix104) {
+    let sql;
+
+    sql = `update tags set extra_tag=extra_data where extra_data in ('PLACE','FACE'); `;
+    sql += `update tags set extra_data='' where extra_tag in  ('PLACE','FACE') ;`;
+    sql += `update taggings set extra_tag=extra_data where extra_data in ('PLACE','FACE'); `;
+    sql += `update taggings set extra_data='' where extra_tag in  ('PLACE','FACE') ;`;
+    plex.run(sql);
+
+}
