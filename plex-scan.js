@@ -237,7 +237,7 @@ async function scanForUpdate() {
             //console.log(`${count} for RGC / ${i} scanned ${rec.file} fresher than PlaceUpdate `, stat.mtimeMs, datePlaceUpdate);
             consoleSameLine(`${loopId + 1}/${recs.length} scanned, Queuing: ${promisesProcessed}/${promises.length}, WithPlace: ${countRGC}, WithFace: ${countFace}, NoEXIF: ${ForNoEXIF.length}`);
 
-            if (promises.length < 4) console.log(`analysing ${rec.file} (mid: ${rec.mid})  Place:${rec.PlaceUpdateTime} Face: ${rec.FaceUpdateTime}, ${stat.mtimeMs} > ${oldestUpdate}`);
+            // if (promises.length < 4) console.log(`analysing ${rec.file} (mid: ${rec.mid})  Place:${rec.PlaceUpdateTime} Face: ${rec.FaceUpdateTime}, ${stat.mtimeMs} > ${oldestUpdate}`);
 
             const p = analyseEXIF(rec);
             promises.push(p);
@@ -265,8 +265,8 @@ async function scanForUpdate() {
     console.log(`ForFace`, ForFace.length);
     console.log(`ForNoEXIF`, ForNoEXIF.length);
 
-    plexFaces.addFaces(ForFace);
-    if (ForNoEXIF.length > 0) plex.markImagesAsUpdated(ForNoEXIF, ["FACE", "PLACE"]);
+    await plexFaces.addFaces(ForFace);
+    if (ForNoEXIF.length > 0) await plex.markImagesAsUpdated(ForNoEXIF, ["FACE", "PLACE"]);
 
     // we are good to run the batch RGC
     if (!argv.nogeo) runBatchGC();
