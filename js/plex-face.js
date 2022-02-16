@@ -46,7 +46,7 @@ async function addFacesinTags(names) {
     // creates all the new faces
     const now = new dayjs().format("YYYY-MM-DD HH:mm:ss");
 
-    const sqlIntro = "INSERT INTO tags (tag, created_at,updated_at,tag_type, extra_data) VALUES  ";
+    const sqlIntro = "INSERT INTO tags (tag, created_at,updated_at,tag_type, extra_tag) VALUES  ";
     await plex.runBig(add, sqlIntro, (elt) => {
         return `('${elt}','${now}','${now}',0,'FACE')`;
     });
@@ -116,7 +116,7 @@ async function addSubFacesInTaggings(names, tags) {
     // creates all the new links
     if (add.length > 0) {
         const now = new dayjs().format("YYYY-MM-DD HH:mm:ss");
-        const sqlIntro = "INSERT INTO taggings (metadata_item_id, tag_id,'index', created_at, extra_data) VALUES  "
+        const sqlIntro = "INSERT INTO taggings (metadata_item_id, tag_id,'index', created_at, extra_tag) VALUES  "
         await plex.runBig(add, sqlIntro, (elt) => { return `('${elt.mid}','${elt.tag_id}',0,'${now}','FACE')`; });
     }
 
@@ -149,20 +149,20 @@ async function addFaces(tags) {
 
     // mark the image as updateds
     const mids = tags.map(elt => elt.mid);
-    plex.markImagesAsUpdated(mids, ["FACE"]);
+    await plex.markImagesAsUpdated(mids, ["FACE"]);
 }
 
 
 /**
  * delete all Face
- * This means delete entries in  tags where tag_type = 0 && extra_data='FACE'  AND delete entries in tagging where tag_id does not exists anymore
+ * This means delete entries in  tags where tag_type = 0 && extra_tag='FACE'  AND delete entries in tagging where tag_id does not exists anymore
  * @returns : promise to delete SQL query
  */
 function deleteAllFaces() {
 
     let sql;
     // find the entry of concern
-    sql = `DELETE from tags where tag_type == 0 AND extra_data = 'FACE'  `;
+    sql = `DELETE from tags where tag_type == 0 AND extra_tag = 'FACE'  `;
     plex.run(sql);
 
     // wider clean of whatever tagging which is not found in tag
