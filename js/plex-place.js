@@ -73,7 +73,7 @@ async function addPlacesinTags(tags) {
 
         // Add into Tags table
         sql =
-            "INSERT INTO tags (tag, tag_type,tag_value, extra_data) VALUES  " +
+            "INSERT INTO tags (tag, tag_type,tag_value, extra_tag) VALUES  " +
             sql.join(",");
         log.debug("\nAdd Places SQL length ", sql.length);
         await plex.run(sql).catch((err) => {
@@ -144,7 +144,7 @@ async function addPlacesInTaggings(midsArray, tags) {
 
     const now = new dayjs().format("YYYY-MM-DD HH:mm:ss");
 
-    const sqlIntro = "INSERT INTO taggings (metadata_item_id, tag_id,'index', created_at, extra_data) VALUES";
+    const sqlIntro = "INSERT INTO taggings (metadata_item_id, tag_id,'index', created_at, extra_tag) VALUES";
     await plex.runBig(diff, sqlIntro, (elt) => {
         return `('${elt.mid}',${elt.tag_id},${elt.index},'${now}','PLACE')`;
     });
@@ -166,14 +166,14 @@ async function addPlaces(mids, tags) {
 
 /**
  * delete all Places
- * This means delete entries in  tags where tag_type = 400  & extra_data = 'PLACE' AND delete entries in tagging where tag_id does not exists anymore
+ * This means delete entries in  tags where tag_type = 400  & extra_tag = 'PLACE' AND delete entries in tagging where tag_id does not exists anymore
  * @returns : promise to delete SQL query
  */
 function deleteAllPlaces() {
 
     let sql;
     // find the entry of concern
-    sql = `DELETE from tags where tag_type == 400 AND extra_data = 'PLACE'  `;
+    sql = `DELETE from tags where tag_type == 400 AND extra_tag = 'PLACE'  `;
     plex.run(sql);
 
     sql = `DELETE from taggings where tag_id not in (select id from tags) `;
