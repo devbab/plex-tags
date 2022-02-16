@@ -74,7 +74,7 @@ async function rebuild() {
     let processed = 0;
 
     function putThumbInStack(elt) {
-        const p = doThumb(elt.file, elt.thumb_url)
+        const p = doThumb(elt.file, elt.thumb_file)
             .then((resp) => {
                 consoleSameLine(`Processed ${++processed} / ${promises.length}`, resp); // thumb is built
             })
@@ -105,7 +105,7 @@ async function rebuild() {
         }
         else { // not forced, will do the job 
             //console.log(`checking`, elt);
-            const ps = fsPromises.stat(elt.thumb_url)
+            const ps = fsPromises.stat(elt.thumb_file)
                 .catch(async (e) => {
                     if (e.code == "ENOENT") putThumbInStack(elt);
                 });
