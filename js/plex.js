@@ -1,6 +1,7 @@
 "use strict";
 require("dotenv").config();
-const debug = require("debug")("Plex");
+const log = require("@devbab/logger").child({ label: "Plex" });
+
 require("colors");
 const Database = require("better-sqlite3");
 const fs = require("fs");
@@ -8,7 +9,6 @@ const path = require("path");
 const { exec } = require("child_process");
 const csv = require("csvtojson");
 const dayjs = require("dayjs");
-const log = require("@devbab/logger").child({ label: "Plex" });
 
 const PLEXLIB =
     process.env.PLEXLIB ||
@@ -32,8 +32,8 @@ const MAXLENSQL = 5000;
 
 
 /*
- FACE : in table tags, tag_type 0 && extra_data = FACE
- PLACE : in table tags, tag_type 4000 && extra_data = PLACE
+ FACE : in table tags, tag_type 0 && extra_tag = FACE
+ PLACE : in table tags, tag_type 4000 && extra_tag = PLACE
 
 */
 /** Plex Media Server commands
@@ -76,7 +76,7 @@ const MAXLENSQL = 5000;
 let db = null;
 
 function init() {
-    //debug("plex.init");
+    //log.debug("plex.init");
 
     if (!fs.existsSync(PLEXLIB)) {
         console.error(`ERROR: ${PLEXLIB} does not EXIST`.red);
@@ -99,7 +99,7 @@ function init() {
  */
 function end() {
     db.close();
-    //debug("plex.end");
+    //log.debug("plex.end");
 }
 
 function patch() {
@@ -110,7 +110,7 @@ function patch() {
         stmt.run();
     }
     catch (e) {
-        console.error(e);
+        console.error(e.message);
     }
 
     sql = 'ALTER TABLE media_items ADD COLUMN "Place_updated_at" datetime';
@@ -119,7 +119,25 @@ function patch() {
         stmt.run();
     }
     catch (e) {
-        console.error(e);
+        console.error(e.message);
+    }
+
+    sql = 'ALTER TABLE tags ADD COLUMN "extra_tag" varchar(64)';
+    try {
+        stmt = db.prepare(sql);
+        stmt.run();
+    }
+    catch (e) {
+        console.error(e.message);
+    }
+
+    sql = 'ALTER TABLE taggings ADD COLUMN "extra_tag" varchar(64)';
+    try {
+        stmt = db.prepare(sql);
+        stmt.run();
+    }
+    catch (e) {
+        console.error(e.message);
     }
 }
 
@@ -137,7 +155,7 @@ function listSections() {
  */
 function listPhotosThumbs(file = null) {
 
-    let sql = `SELECT MP.file as file,MP.updated_at as updated_at, LS.name as section, MDI.user_thumb_url as thumb_url `;
+    let sql = `SELECT MP.file as file,MP.updated_at as updated_at, LS.name as section, MDI.user_thumb_url as thumb_file `;
     sql += `FROM media_parts as MP, media_items as MI, metadata_items as MDI, library_sections as LS `;
     sql += `WHERE MP.media_item_id = MI.id AND MI.metadata_item_id = MDI.id `;
     sql += `AND MI.library_section_id in (SELECT id FROM library_sections where section_type = 13) `;
@@ -145,14 +163,14 @@ function listPhotosThumbs(file = null) {
     sql += `AND MI.container in ${PHOTO_EXT} `;
     if (file) sql += `AND MP.file = '${file}' `;
 
-    debug("listPhotosThumbs", sql);
+    log.debug("listPhotosThumbs", sql);
 
     const stmt = db.prepare(sql);
     let req = stmt.all();
 
     req = req.map((elt) => {
         elt.file = path.normalize(elt.file);
-        elt.thumb_url = path.normalize(PLEX_MEDIA_PATH + elt.thumb_url.substr(7));
+        elt.thumb_file = path.normalize(PLEX_MEDIA_PATH + elt.thumb_file.substr(7));
 
         return elt;
     });
@@ -166,14 +184,14 @@ function listPhotosThumbs(file = null) {
  */
 function listPhotos(file) {
 
-    let sql = `SELECT A.file as file,MDI.user_thumb_url as thumb_url `;
+    let sql = `SELECT A.file as file,MDI.user_thumb_url as thumb_file `;
     sql += `FROM media_parts as A, media_items as MI, metadata_items as MDI `;
     sql += `WHERE A.media_item_id = MI.id AND MI.metadata_item_id = MDI.id   `;
     sql += `AND MI.library_section_id in (SELECT id FROM library_sections where section_type = 13) `;
     if (file)
         sql += `AND A.file = '${file}'`
 
-    //debug("listPhotos", sql);
+    //log.debug("listPhotos", sql);
 
 
     const stmt = db.prepare(sql);
@@ -182,7 +200,7 @@ function listPhotos(file) {
     req = req.map((elt) => {
         return {
             file: path.normalize(elt.file),
-            thumb_url: path.normalize(PLEX_MEDIA_PATH + elt.thumb_url.substr(7)),
+            thumb_file: path.normalize(PLEX_MEDIA_PATH + elt.thumb_file.substr(7)),
         };
     });
 
@@ -224,7 +242,7 @@ function listPhotosPatched() {
 async function run(sql) {
 
     /*   let fileOut = path.normalize(`${TMP}/${uniqid.time()}.sql`);
-       debug("temp file", fileOut);
+       log.debug("temp file", fileOut);
    
        const buffer =
            `.echo off
@@ -249,7 +267,7 @@ async function run(sql) {
                 console.error("Plex.run Stderr", stderr.red);
                 reject(stderr);
             } else {
-                //debug("Stdout:", stdout);
+                //log.debug("stdout:", stdout);
                 //resolve(stdout);
 
                 csv({
@@ -270,7 +288,7 @@ async function run(sql) {
  * joining is done with "",""
  * 
  * @param {array} list   list of entries to add
- * @param {string} sqlIntro   list of initial SQL bit, for instance "INSERT INTO tags (tag, tag_type, extra_data) VALUES  "
+ * @param {string} sqlIntro   list of initial SQL bit, for instance "INSERT INTO tags (tag, tag_type, extra_tag) VALUES  "
  * @param {function} buildEntry  function called as buildEntry(elt) and returns the sql line to add
  * @returns void
  */
@@ -286,7 +304,7 @@ async function runBig(list, sqlIntro, buildEntry) {
         const entry = buildEntry(list[0]);
         const newlen = sqlIntro.length + newbit.join(",").length + entry.length + 1; // +1 for comma
 
-        // debug(`addFaces current diff,newbit, len`, diff, newbit, newlen);
+        // log.debug(`addFaces current diff,newbit, len`, diff, newbit, newlen);
 
         if (newlen < MAXLENSQL) { // this will fit, add in the newbit
             newbit.push(entry);
@@ -346,7 +364,7 @@ function listTagsForImage(imageFile, type, fancy = false) {
 }
 
 function findFile(options) {
-    log.info(`findFile`, options);
+    log.verbose(`findFile`, options);
 
     if (!options?.file && !options?.mid) return;
 
@@ -359,7 +377,7 @@ function findFile(options) {
     if (options?.file) sql += `AND MP.file like '${options.file}' `;
     if (options?.mid) sql += `AND MI.metadata_item_id =  ${options.mid} `;
 
-    debug(`findFile SQL ${sql}`);
+    log.debug(`findFile SQL ${sql}`);
 
 
     const stmt = db.prepare(sql);
@@ -367,7 +385,7 @@ function findFile(options) {
 }
 
 function details(options) {
-    log.info(`details`, options);
+    log.verbose(`details`, options);
 
     if (!options?.file && !options?.mid) return;
 
@@ -384,14 +402,14 @@ function details(options) {
     //m id = media_items.metadata_item_id
 
     // looking for some tags
-    let sql = `SELECT TG.id, TG.tag_id as tag_id, TG."index", T.tag_type, T.tag_value,T.tag,T.extra_data   `;
+    let sql = `SELECT TG.id, TG.tag_id as tag_id, TG."index", T.tag_type, T.tag_value,T.tag,T.extra_tag   `;
     sql += `from media_parts as MP, media_items as MI, taggings as TG, tags as T `;
     sql += `WHERE  MP.media_item_id = MI.id AND MI.metadata_item_id = TG.metadata_item_id AND TG.tag_id = T.id `;
     sql += `AND T.tag_type in (0,400) `;
     sql += `AND MI.metadata_item_id =  ${resp[0].mid} `;
 
     sql += `ORDER by T.tag ASC`;
-    debug(`details Tag SQL ${sql}`);
+    log.debug(`details Tag SQL ${sql}`);
 
 
     const stmt = db.prepare(sql);
@@ -399,13 +417,13 @@ function details(options) {
     if (resp.length == 0) return output; // no tags, answer with what we have
 
 
-    output.FACES = resp.filter(elt => elt.extra_data == "FACE").map(elt => {
+    output.FACES = resp.filter(elt => elt.extra_tag == "FACE").map(elt => {
         return {
             taggings: `id: ${elt.id}, tag_id: ${elt.tag_id}`,
             tag: `tag: "${elt.tag}", index: ${elt.index}`
         }
     });
-    output.PLACES = resp.filter(elt => elt.extra_data == "PLACE").map(elt => {
+    output.PLACES = resp.filter(elt => elt.extra_tag == "PLACE").map(elt => {
         return {
             taggings: `id: ${elt.id}, tag_id: ${elt.tag_id}`,
             tag: `tag: "${elt.tag}", index: ${elt.index}, tag_value:${elt.tag_value}`
@@ -433,45 +451,6 @@ function details(options) {
 
 
 
-/**
- * delete all tags for a file
- * This means delete entries in taggings and NOT in tags as they might be used elsewhere
- * @param {string} imageFile name of the image file 
- * @param {string} type : "PLACE", "FACE"
- * @returns : promise to delete SQL query
- */
-function deleteTagsForImage(imageFile, type) {
-
-    let sql, tag_type;
-
-    switch (type) {
-        case 'PLACE': tag_type = 400; break;
-        case 'FACE': tag_type = 0; break;
-        default: throw `plex.listTags: wrong type ${type}`
-    }
-
-    // find the entry of concern
-    sql = `SELECT TG.id, TG.extra_data  `;
-    sql += `from media_parts as MP, media_items as MI, taggings as TG, tags as T `;
-    sql += `WHERE MP.file = '${imageFile}' AND MP.media_item_id = MI.id AND MI.metadata_item_id = TG.metadata_item_id AND TG.tag_id = T.id `;
-    sql += `AND T.tag_type = ${tag_type}`;
-
-    const stmt = db.prepare(sql);
-    let resp = stmt.all();
-
-
-    if (resp.length == 0)
-        return Promise.reject(`no tags to delete`);
-
-    debug(`Removing ${resp.length} entries`);
-
-    const ids = resp.map(resp => resp.id).join(",");
-    sql = `DELETE from taggings where id in (${ids})`;
-    debug(`SQL`, sql);
-    return run(sql);
-}
-
-
 
 
 /**
@@ -483,7 +462,7 @@ function deleteTagsForImage(imageFile, type) {
 function listTagging(type = null) {
     let sql = `select id,metadata_item_id as mid,tag_id,"index" from taggings `;
     sql += `WHERE "index" in (0,1,2,3,4) `;
-    if (type) sql += `AND extra_data = '${type}'`;
+    if (type) sql += `AND extra_tag = '${type}'`;
     sql += `ORDER by metadata_item_id, tag_id ASC `;
 
     log.debug(`listTagging SQL`, sql);
@@ -492,13 +471,13 @@ function listTagging(type = null) {
 }
 
 /**
- * returns all Faces, eg list of entries in tags where extra_data = 'FACE'
+ * returns all Faces, eg list of entries in tags where extra_tag = 'FACE'
  * @param {array} names array of names to which to restrict the search 
 
  * @returns 
  */
 function listFaces(names = null) {
-    let sql = `SELECT T.id, T.tag   from tags as T WHERE   T.extra_data ='FACE' `;
+    let sql = `SELECT T.id, T.tag   from tags as T WHERE   T.extra_tag ='FACE' `;
 
 
     if (names?.length > 0) {
@@ -519,13 +498,13 @@ function listFaces(names = null) {
 
 
 /**
- * returns all Places, eg list of entries in tags where extra_data = 'PLACE'
+ * returns all Places, eg list of entries in tags where extra_tag = 'PLACE'
  * @param {array} names array of names to which to restrict the search 
 
  * @returns array of {id,tag,index}
  */
 function listPlaces(names = null) {
-    let sql = `SELECT T.id, T.tag, T.tag_value  from tags as T WHERE  T.extra_data ='PLACE' `;
+    let sql = `SELECT T.id, T.tag, T.tag_value  from tags as T WHERE  T.extra_tag ='PLACE' `;
 
 
     if (names?.length > 0) {
@@ -577,7 +556,7 @@ function listFancyPlaces(name = null) {
  */
 async function markImagesAsUpdated(mids, type) {
     //debug(`markImagesAsUpdated #mid:  ${mids.length}`, type);
-    log.debug(`markImagesAsUpdated #mid:  ${mids.length}`, type);
+    log.verbose(`markImagesAsUpdated #mid:  ${mids.length}`, type);
 
     if (!mids.length) return;
     if (!type?.length) return;
@@ -638,11 +617,42 @@ function clean() {
     run(sql);
 
     // remove tags not referenced in taggings
-    sql = `DELETE from tags where id not in (select tag_id from taggings) AND extra_data = 'FACE' `;
+    sql = `DELETE from tags where id not in (select tag_id from taggings) AND extra_tag = 'FACE' `;
     log.debug(`Clean SQL`, sql);
     run(sql);
+}
 
+/**
+ * Find images and thumns totaly within a north-east south-west bound
+ * @param {Object} ne {latitude,longitude} 
+ * @param {Object} sw {latitude,longitude} 
+ */
+function listBounds({ ne, sw, center }) {
+    log.verbose(`listBounds`);
+    console.log(`Plex:Logger`, log.version());
 
+    let sql = `select MP.file, MP.hash,MDI.user_thumb_url as thumb_file, MI.metadata_item_id as mid, L.lat_min, L.lat_max, L.lon_min, L.lon_max `;
+    if (center) sql += `,((${center.latitude} - L.lat_min) * (${center.latitude} - L.lat_min) + (${center.longitude} - L.lon_min)* (${center.longitude} - L.lon_min)) as dist `;
+
+    sql += `from media_items as MI, locatables as LT, locations as L, media_parts as MP, metadata_items as MDI `;
+    sql += `WHERE mid = LT.locatable_id AND LT.location_id = L.id AND MP.media_item_id = mid AND MDI.id = mid `;
+    sql += ` AND L.lat_min >= ${sw.latitude} AND L.lat_max <= ${ne.latitude} `;
+    sql += ` AND L.lon_min >= ${sw.longitude} AND L.lon_max <= ${ne.longitude} `;
+    if (center) sql += `ORDER by dist ASC`;
+
+    log.debug(`log.debug: listBounds SQL:`, sql);
+
+    const stmt = db.prepare(sql);
+    let resp = stmt.all();
+
+    resp = resp.map((elt) => {
+        elt.file = path.normalize(elt.file);
+        elt.thumb_fle = path.normalize(PLEX_MEDIA_PATH + elt.thumb_fle.substr(7));
+
+        return elt;
+    });
+
+    return resp;
 }
 
 module.exports = {
@@ -661,7 +671,6 @@ module.exports = {
 
     // generic about tagging of photo, place
     listTagsForImage,
-    deleteTagsForImage,
     listFaces,
     listPlaces,
     listFancyPlaces,
@@ -672,5 +681,7 @@ module.exports = {
     listPhotosThumbs,
     listPhotosPatched,       // list of photos, with PLACE, TTP update fields
 
-    markImagesAsUpdated
+    markImagesAsUpdated,
+
+    listBounds
 };
