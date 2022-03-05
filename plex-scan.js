@@ -21,6 +21,7 @@ const plex = require("./js/plex.js");
 const exif = require("./js/exif.js");
 const plexFaces = require("./js/plex-face.js");
 const plexPlaces = require("./js/plex-place.js");
+const { name, version } = require("./package.json");
 
 
 // array of {latlng: "lat,lng" ,ids: [rec.mid], file}  where mid =  media_items.metadata_item_id
@@ -36,6 +37,9 @@ let loopId;
 
 
 const usage = `
+    Version: ${version}
+    Database in use: ${plex.whichDB()}
+
     usage node plex-scan.js [-h] [-l] [-g [-f]] [-s jobId]
     -h : show this help
     --patch         add fields in database to manage PLACES and FACES
@@ -43,9 +47,7 @@ const usage = `
         --nogeo:  do not run bach reverse geocode 
 
     --delplace      delete all Places from library
-
-    Database in use: ${plex.whichDB()}
-    `
+     `
 
 
 
@@ -230,7 +232,9 @@ async function scanForUpdate() {
         consoleSameLine(`${loopId + 1}/${recs.length} scanned, Queuing: ${promisesProcessed}/${promises.length}, WithPlace: ${countRGC}, WithFace: ${countFace}, NoEXIF: ${ForNoEXIF.length}`);
 
         // what is update time of the file ?
-        const stat = await fsPromises.stat(rec.file);
+        const stat = await fsPromises.stat(rec.file).catch(() => { });
+        if (!stat) continue;
+
         //console.log(`\ndates: ${stat.mtimeMs}, ${oldestUpdate}`);
         if (stat.mtimeMs > oldestUpdate) { // file most recent than oldest update
 
