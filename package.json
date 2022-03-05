@@ -1,6 +1,6 @@
 {
     "name": "@devbab/plex-tags",
-    "version": "1.0.6",
+    "version": "1.0.7",
     "description": "Add Faces and Places tags to photos in Plex Database",
     "main": "js/plex.js",
     "scripts": {
