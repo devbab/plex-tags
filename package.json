@@ -1,6 +1,6 @@
 {
     "name": "@devbab/plex-tags",
-    "version": "1.0.7",
+    "version": "1.0.8",
     "description": "Add Faces and Places tags to photos in Plex Database",
     "main": "js/plex.js",
     "scripts": {
@@ -22,28 +22,22 @@
     "license": "ISC",
     "dependencies": {
         "@devbab/logger": "^1.0.1",
-        "better-sqlite3": "^7.5.0",
+        "better-sqlite3": "^8.0.1",
         "colors": "^1.4.0",
-        "cors": "^2.8.5",
         "csvtojson": "^2.0.10",
-        "dayjs": "^1.10.7",
-        "debug": "^4.3.3",
-        "dotenv": "^14.3.2",
-        "etl": "^0.6.12",
-        "ev": "^0.0.7",
-        "exiftool-vendored": "^15.10.1",
-        "express": "^4.17.2",
-        "minimist": "^1.2.5",
-        "os": "^0.1.2",
-        "sharp": "^0.29.3",
-        "sqlite3": "^4.2.0",
-        "superagent": "^5.3.1",
-        "uniqid": "^5.4.0",
+        "dayjs": "^1.11.7",
+        "debug": "^4.3.4",
+        "dotenv": "^16.0.3",
+        "etl": "^0.7.0",
+        "exiftool-vendored": "^19.0.0",
+        "lodash": "^4.17.21",
+        "minimist": "^1.2.7",
+        "superagent": "^8.0.6",
         "unzipper": "^0.10.11",
-        "yesno": "^0.3.1"
+        "yesno": "^0.4.0"
     },
     "devDependencies": {
-        "eslint": "^8.8.0"
+        "eslint": "^8.31.0"
     },
     "engines": {
         "node": ">=16.0"

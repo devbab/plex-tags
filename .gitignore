@@ -8,8 +8,5 @@ js/test.js
 logs/
 test/
 doc/~$database.pptx
-plex-tags-1.0.1.tgz
 .env
-devbab-plex-tags-1.0.5.tgz
-devbab-plex-tags-1.0.6.tgz
-devbab-plex-tags-1.0.7.tgz
+dist/
