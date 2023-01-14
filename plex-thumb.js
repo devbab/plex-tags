@@ -28,12 +28,12 @@ function doThumb(src, dest) {
 
         // https://sharp.pixelplumbing.com/api-resize
         return sharp(src)
-            .rotate() // take into account th eorientation flag in EXIF
+            .rotate() // take into account the orientation flag in EXIF
             .resize({ width: 720, height: 512, fit: "inside", kernel: "cubic" })
             .toFile(dest);
     }
 
-    // create the directory. whether it fails or not (existing/not existing), we launch the rhumb creation
+    // create the directory. whether it fails or not (existing/not existing), we launch the thumb creation
     return fsPromises.mkdir(path.dirname(dest), { recursive: true })
         .finally(() => {
             //    console.log("dir created");
@@ -68,6 +68,15 @@ async function rebuild() {
     //result.length = 10000;
 
     console.log(`${result.length} Images`);
+
+    let thumbDirectories = {};
+    result.forEach(elt => {
+        const destDir = path.dirname(elt.thumb_file);
+        thumbDirectories[destDir] = 1;
+    });
+    thumbDirectories = Object.keys(thumbDirectories);
+    console.log(`Thumb directories:`, thumbDirectories);
+
 
     let promises = [];
     let promisesStat = [];
@@ -111,6 +120,7 @@ async function rebuild() {
                 });
 
             promisesStat.push(ps);
+
         }
     }
 
